@@ -1,9 +1,8 @@
 import mongoose,{ model, Schema } from "mongoose";
-import dotenv from "dotenv";
-dotenv.config();
+import config from "./config.js";
 
  
-mongoose.connect(process.env.MONGO_URL!);
+mongoose.connect(config.mongoUri);
 
 export const UserSchema = new Schema({
     username: {type: String, unique: true},
@@ -11,3 +10,14 @@ export const UserSchema = new Schema({
 })
 
 export const User = mongoose.model('User', UserSchema);
+
+
+export const ContentSchema = new Schema({
+    title: String,
+    link: String,
+    tags: [{type: mongoose.Schema.Types.ObjectId, ref: 'Tag'}],
+    userId: {type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
+
+})
+
+export const Content = mongoose.model('Content', ContentSchema);

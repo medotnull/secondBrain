@@ -1,11 +1,9 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { User } from './db.js';
+import { User, Content } from './db.js';
 import zod from 'zod';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import config from "./config.js";
 
 
 const app = express();
@@ -72,6 +70,7 @@ app.post("/api/v1/signin", async (req, res) => {
     }
 
     const isPasswordValid = await bcrypt.compare(password, existingUser.password!);
+
     if(!isPasswordValid){
         return res.status(400).json({
             message: "Invalid password"
@@ -79,8 +78,9 @@ app.post("/api/v1/signin", async (req, res) => {
     }
 
     const token = jwt.sign(
-        {userId: existingUser._id}, process.env.JWT_SECRET!,
+        {userId: existingUser._id}, config.jwtSecret!,
     );
+    //generate jwt payload signed with secret key
 
     res.json({
         message: "User signed in successfully",
@@ -90,7 +90,20 @@ app.post("/api/v1/signin", async (req, res) => {
 })
 
 app.post("/api/v1/content", async (req, res) => {
+    const link = req.body.link;
+    const type = req.body.type; // 'article'
 
+    // const content = await Content.create({
+    //     title: req.body.title,
+    //     link: req.body.link,
+    //     type: req.body.type,
+    //     userId: req.body.userId
+    // })
+
+    // res.json({
+    //     message: "Content created successfully",
+    //     content
+    // })
 })
 
 app.get("/api/v1/content", async (req, res) => {
