@@ -4,6 +4,9 @@ import bcrypt from "bcryptjs";
 import { User, Content } from './db.js';
 import zod from 'zod';
 import config from "./config.js";
+import { userMiddleware } from "./middleware.js";
+import mongoose from "mongoose";
+import { Request } from "express";
 
 
 const app = express();
@@ -89,28 +92,63 @@ app.post("/api/v1/signin", async (req, res) => {
 
 })
 
-app.post("/api/v1/content", async (req, res) => {
+app.post("/api/v1/content", userMiddleware, async (req, res) => {
     const link = req.body.link;
-    const type = req.body.type; // 'article'
+    const type = req.body.type; // 'article', 'image', 'video', etc.
 
-    // const content = await Content.create({
-    //     title: req.body.title,
-    //     link: req.body.link,
-    //     type: req.body.type,
-    //     userId: req.body.userId
-    // })
+    if (!type) {
+        return res.status(400).json({
+            message: "Link and type are required"
+        })
+    }
 
-    // res.json({
-    //     message: "Content created successfully",
-    //     content
-    // })
+    const content = await Content.create({
+        title: req.body.title,
+        link: req.body.link,
+        type: req.body.type,
+        userId: req.body.userId,
+        tags: req.body.tags || [],
+    })
+
+    res.json({
+        message: "Content created successfully",
+        content
+    })
 })
 
 app.get("/api/v1/content", async (req, res) => {
+    const userId = req.query.userId as string;
+
+    let query: any = {};
+    if (!userId) {
+        query.userId = new mongoose.Types.ObjectId(req.user.userId);
+    } else {
+        query.userId = new mongoose.Types.ObjectId(userId);
+    }
+    const content = await Content.find(query)
+        .populate<{userId: {username: string}}>("userId", "username") //get the username that is mapped to userId 
+        .lean();  //faster read-only operation
+
+    res.json({
+        success: true,
+        count: content.length,
+        content
+    });
 
 })
 
 app.delete("/api/v1/content", async (req, res) => {
+    const contentId = req.body.contentId;
+
+    await Content.deleteMany({
+        contentId,
+        userId: req.userId
+    })
+
+    res.json({
+        message: "Content deleted successfully"
+    })
+
 
 })
 

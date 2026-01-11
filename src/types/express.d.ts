@@ -1,7 +1,10 @@
 declare global {
   namespace Express {
     interface Request {
-      userId?: string;  // Yeh line add karta hai req.userId
+      user?: {
+        userId: string;
+        // Add other JWT payload fields
+      };
     }
   }
 }

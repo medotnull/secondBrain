@@ -1,10 +1,10 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { User } from './db.js';
+import { User, Content } from './db.js';
 import zod from 'zod';
-import dotenv from 'dotenv';
-dotenv.config();
+import config from "./config.js";
+import { userMiddleware } from "./middleware.js";
 const app = express();
 app.use(express.json());
 const signupBodySchema = zod.object({
@@ -61,13 +61,32 @@ app.post("/api/v1/signin", async (req, res) => {
             message: "Invalid password"
         });
     }
-    const token = jwt.sign({ userId: existingUser._id }, process.env.JWT_SECRET);
+    const token = jwt.sign({ userId: existingUser._id }, config.jwtSecret);
+    //generate jwt payload signed with secret key
     res.json({
         message: "User signed in successfully",
         token
     });
 });
-app.post("/api/v1/content", async (req, res) => {
+app.post("/api/v1/content", userMiddleware, async (req, res) => {
+    const link = req.body.link;
+    const type = req.body.type; // 'article', 'image', 'video', etc.
+    if (!link || !type) {
+        return res.status(400).json({
+            message: "Link and type are required"
+        });
+    }
+    const content = await Content.create({
+        title: req.body.title,
+        link: req.body.link,
+        type: req.body.type,
+        userId: req.body.userId,
+        tags: req.body.tags || [],
+    });
+    res.json({
+        message: "Content created successfully",
+        content
+    });
 });
 app.get("/api/v1/content", async (req, res) => {
 });
